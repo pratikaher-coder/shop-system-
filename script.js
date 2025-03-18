@@ -172,6 +172,7 @@ function addExpenseToTable(description, amount) {
 }
 
 // Function to handle selling a product
+// Function to handle selling a product
 function sellProduct(button) {
     const row = button.closest('tr');
     const quantityCell = row.cells[2];
@@ -190,13 +191,6 @@ function deleteProduct(button) {
     const row = button.closest('tr');
     row.remove();
 }
-
-// Function to handle deleting an expense
-function deleteExpense(button) {
-    const row = button.closest('tr');
-    row.remove();
-}
-
 // Bill Generation Functionality
 document.getElementById('generateBillBtn').addEventListener('click', function() {
     const billPopup = document.getElementById('billPopup');
