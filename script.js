@@ -68,7 +68,6 @@ function showSummaryPopup() {
     const popup = document.getElementById('summaryPopup');
     popup.style.display = 'flex';
 }
-
 // Function to calculate total sales
 function calculateTotalSales() {
     const productRows = document.querySelectorAll('#productTable tbody tr');
@@ -87,6 +86,7 @@ function calculateTotalSales() {
 
     return totalSales;
 }
+
 
 // Function to calculate total expenses
 function calculateTotalExpenses() {
