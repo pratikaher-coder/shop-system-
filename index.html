@@ -3,63 +3,106 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shop Manager</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Shop Management</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="container">
-        <!-- Day Controls -->
-        <div class="day-controls">
-            <button id="toggleDay">Open Day</button>
-            <span id="dayStatus">Status: Closed</span>
+        <h1>Shop Management</h1>
+
+        <!-- Open/Close Buttons and Day Counter -->
+        <div class="control-buttons">
+            <button id="openBtn">Open</button>
+            <button id="closeBtn">Close</button>
+            <div id="dayCounter">Day: 0</div>
         </div>
 
-        <!-- Add Product Form -->
-        <div class="form-section">
-            <h2>Stock Management</h2>
-            <input type="text" id="productName" placeholder="Product Name">
-            <input type="number" id="productPrice" placeholder="Price">
-            <input type="number" id="productStock" placeholder="Stock">
-            <button onclick="addProduct()" id="addBtn">Add Product</button>
-        </div>
+        <!-- Product Form -->
+        <h2 class="small-title">Add Product</h2>
+        <form id="productForm">
+            <input type="text" id="productName" placeholder="Product Name" required disabled>
+            <input type="number" id="productPrice" placeholder="Product Price (₹)" required disabled>
+            <input type="number" id="productQuantity" placeholder="Product Quantity" required disabled>
+            <button type="submit" disabled>Add Product</button>
+        </form>
 
-        <!-- Search -->
-        <div class="search-section">
-            <input type="text" id="searchInput" placeholder="Search products...">
-        </div>
+        <!-- Expense Form -->
+        <h2 class="small-title">Add Expense</h2>
+        <form id="expenseForm">
+            <input type="text" id="expenseName" placeholder="Expense Name" required disabled>
+            <input type="number" id="expensePrice" placeholder="Expense Amount (₹)" required disabled>
+            <button type="submit" disabled>Add Expense</button>
+        </form>
 
-        <!-- Product List -->
-        <div class="product-list" id="productList"></div>
+        <!-- Product Table -->
+        <h2 class="small-title">Products</h2>
+        <table id="productTable">
+            <thead>
+                <tr>
+                    <th>Product Name</th>
+                    <th>Price (₹)</th>
+                    <th>Quantity</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Product rows will be inserted here by JavaScript -->
+            </tbody>
+        </table>
 
-        <!-- Action Buttons -->
-        <div class="action-buttons">
-            <button onclick="showBill()" id="billBtn">Generate Bill</button>
-            <button onclick="showCalculator()">Calculator</button>
+        <!-- Expense Table -->
+        <h2 class="small-title">Expenses</h2>
+        <table id="expenseTable">
+            <thead>
+                <tr>
+                    <th>Expense Name</th>
+                    <th>Amount (₹)</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Expense rows will be inserted here by JavaScript -->
+            </tbody>
+        </table>
+
+        <!-- Calculator Button -->
+        <button id="calculatorBtn" class="calculator-btn">Calculator</button>
+    </div>
+
+    <!-- Daily Summary Popup -->
+    <div id="summaryPopup" class="summary-popup">
+        <div class="summary-content">
+            <h2>Daily Summary</h2>
+            <p>Total Sales: ₹<span id="totalSales">0.00</span></p>
+            <p>Total Expenses: ₹<span id="totalExpensesSummary">0.00</span></p>
+            <p>Net Profit/Loss: ₹<span id="netProfitLossSummary">0.00</span></p>
+            <button id="closePopup">Close</button>
         </div>
     </div>
 
-    <!-- Bill Modal -->
-    <div id="billModal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="closeModal()">&times;</span>
-            <h2>Today's Bill</h2>
-            <div id="billItems"></div>
-            <p id="totalAmount">Total: $0.00</p>
-        </div>
-    </div>
-
-    <!-- Calculator Modal -->
-    <div id="calcModal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="closeModal()">&times;</span>
-            <div class="calculator">
-                <input type="text" id="calcDisplay" readonly>
-                <div class="calc-buttons">
-                    <button>7</button><button>8</button><button>9</button><button>+</button>
-                    <button>4</button><button>5</button><button>6</button><button>-</button>
-                    <button>1</button><button>2</button><button>3</button><button>*</button>
-                    <button>C</button><button>0</button><button>=</button><button>/</button>
-                </div>
+    <!-- Calculator Popup -->
+    <div id="calculatorPopup" class="calculator-popup">
+        <div class="calculator-content">
+            <h2>Calculator</h2>
+            <input type="text" id="calculatorInput" placeholder="0" readonly>
+            <div class="calculator-buttons">
+                <button>7</button>
+                <button>8</button>
+                <button>9</button>
+                <button>+</button>
+                <button>4</button>
+                <button>5</button>
+                <button>6</button>
+                <button>-</button>
+                <button>1</button>
+                <button>2</button>
+                <button>3</button>
+                <button>*</button>
+                <button>0</button>
+                <button>.</button>
+                <button id="cancelBtn">C</button>
+                <button>/</button>
+                <button id="calculateBtn">=</button>
             </div>
         </div>
     </div>
