@@ -133,120 +133,146 @@ document.getElementById('productForm').addEventListener('submit', function(event
 document.getElementById('expenseForm').addEventListener('submit', function(event) {
     event.preventDefault();
 
-    const expenseName = document.getElementById('expenseName').value;
-    const expensePrice = document.getElementById('expensePrice').value;
+    const expenseDescription = document.getElementById('expenseName').value;
+    const expenseAmount = document.getElementById('expensePrice').value;
 
-    if (expenseName && expensePrice) {
-        addExpenseToTable(expenseName, expensePrice);
+    if (expenseDescription && expenseAmount) {
+        addExpenseToTable(expenseDescription, expenseAmount);
         document.getElementById('expenseForm').reset();
     } else {
         alert('Please fill in all fields for the expense.');
     }
 });
 
-// Function to Add Product to Table
+// Function to add a product to the product table
 function addProductToTable(name, price, quantity) {
-    const table = document.getElementById('productTable').getElementsByTagName('tbody')[0];
-    const newRow = table.insertRow();
+    const productTableBody = document.querySelector('#productTable tbody');
+    const newRow = document.createElement('tr');
 
-    const cell1 = newRow.insertCell(0);
-    const cell2 = newRow.insertCell(1);
-    const cell3 = newRow.insertCell(2);
-    const cell4 = newRow.insertCell(3);
-
-    cell1.textContent = name;
-    cell2.textContent = `₹${price}`;
-    cell3.textContent = quantity;
+    newRow.innerHTML = `
+        <td>${name}</td>
+        <td>₹${price}</td>
+        <td>${quantity}</td>
+        <td><button class="sell-btn" onclick="sellProduct(this)">Sell</button></td>
+        <td><button class="delete-btn" onclick="deleteProduct(this)">Delete</button></td>
+    `;
 
     // Store the initial quantity in a data attribute
     newRow.dataset.initialQuantity = quantity;
 
-    // Sell Button
-    const sellButton = document.createElement('button');
-    sellButton.textContent = 'Sell';
-    sellButton.classList.add('sell-btn');
-    sellButton.addEventListener('click', function() {
-        const currentQuantity = parseInt(cell3.textContent);
-        if (currentQuantity > 0) {
-            cell3.textContent = currentQuantity - 1; // Reduce quantity by 1
-            if (cell3.textContent == 0) {
-                table.deleteRow(newRow.rowIndex - 1); // Remove row if quantity is 0
-            }
-        }
-    });
-
-    // Delete Button
-    const deleteButton = document.createElement('button');
-    deleteButton.textContent = 'Delete';
-    deleteButton.classList.add('delete-btn');
-    deleteButton.addEventListener('click', function() {
-        table.deleteRow(newRow.rowIndex - 1);
-    });
-
-    cell4.appendChild(sellButton);
-    cell4.appendChild(deleteButton);
+    productTableBody.appendChild(newRow);
 }
 
-// Function to Add Expense to Table
-function addExpenseToTable(name, price) {
-    const table = document.getElementById('expenseTable').getElementsByTagName('tbody')[0];
-    const newRow = table.insertRow();
+// Function to add an expense to the expense table
+function addExpenseToTable(description, amount) {
+    const expenseTableBody = document.querySelector('#expenseTable tbody');
+    const newRow = document.createElement('tr');
 
-    const cell1 = newRow.insertCell(0);
-    const cell2 = newRow.insertCell(1);
-    const cell3 = newRow.insertCell(2);
+    newRow.innerHTML = `
+        <td>${description}</td>
+        <td>₹${amount}</td>
+        <td><button class="delete-btn" onclick="deleteExpense(this)">Delete</button></td>
+    `;
 
-    cell1.textContent = name;
-    cell2.textContent = `₹${price}`;
-
-    // Delete Button
-    const deleteButton = document.createElement('button');
-    deleteButton.textContent = 'Delete';
-    deleteButton.classList.add('delete-btn');
-    deleteButton.addEventListener('click', function() {
-        table.deleteRow(newRow.rowIndex - 1);
-    });
-
-    cell3.appendChild(deleteButton);
+    expenseTableBody.appendChild(newRow);
 }
 
-// Initialize the day counter display
-document.getElementById('dayCounter').textContent = `Day: ${dayCounter}`;
+// Function to handle selling a product
+function sellProduct(button) {
+    const row = button.closest('tr');
+    const quantityCell = row.cells[2];
+    let quantity = parseInt(quantityCell.textContent);
 
-// Calculator Button: Show Calculator Popup
-document.getElementById('calculatorBtn').addEventListener('click', function() {
-    const popup = document.getElementById('calculatorPopup');
-    popup.style.display = 'flex';
-});
-
-// Close Calculator Popup when clicking outside
-document.getElementById('calculatorPopup').addEventListener('click', function(event) {
-    if (event.target === this) {
-        this.style.display = 'none';
+    if (quantity > 0) {
+        quantity--;
+        quantityCell.textContent = quantity;
+    } else {
+        alert('No more stock available for this product.');
     }
+}
+
+// Function to handle deleting a product
+function deleteProduct(button) {
+    const row = button.closest('tr');
+    row.remove();
+}
+
+// Function to handle deleting an expense
+function deleteExpense(button) {
+    const row = button.closest('tr');
+    row.remove();
+}
+
+// Calculator Functionality
+document.getElementById('calculatorBtn').addEventListener('click', function() {
+    const calculatorPopup = document.getElementById('calculatorPopup');
+    calculatorPopup.style.display = 'flex';
 });
 
-// Calculator Logic
-const calculatorInput = document.getElementById('calculatorInput');
-const calculatorButtons = document.querySelectorAll('.calculator-buttons button');
-
-calculatorButtons.forEach(button => {
+document.querySelectorAll('.calculator-buttons button').forEach(button => {
     button.addEventListener('click', function() {
-        const value = this.textContent;
-
-        if (value === 'C') {
-            // Clear the input
-            calculatorInput.value = '';
-        } else if (value === '=') {
-            // Evaluate the expression
+        const input = document.getElementById('calculatorInput');
+        if (button.textContent === 'C') {
+            input.value = '';
+        } else if (button.textContent === '=') {
             try {
-                calculatorInput.value = eval(calculatorInput.value);
-            } catch (error) {
-                calculatorInput.value = 'Error';
+                input.value = eval(input.value);
+            } catch {
+                input.value = 'Error';
             }
         } else {
-            // Append the value to the input
-            calculatorInput.value += value;
+            input.value += button.textContent;
         }
     });
 });
+
+document.getElementById('cancelBtn').addEventListener('click', function() {
+    const calculatorPopup = document.getElementById('calculatorPopup');
+    calculatorPopup.style.display = 'none';
+});
+
+// Bill Generation Functionality
+document.getElementById('generateBillBtn').addEventListener('click', function() {
+    const billPopup = document.getElementById('billPopup');
+    billPopup.style.display = 'flex';
+
+    // Populate bill items
+    const productRows = document.querySelectorAll('#productTable tbody tr');
+    const billItems = document.getElementById('billItems');
+    billItems.innerHTML = '';
+
+    productRows.forEach(row => {
+        const name = row.cells[0].textContent;
+        const price = row.cells[1].textContent.replace('₹', '');
+        const quantity = row.cells[2].textContent;
+
+        if (quantity > 0) {
+            const item = document.createElement('div');
+            item.innerHTML = `
+                <p>${name} - ₹${price} x ${quantity}</p>
+            `;
+            billItems.appendChild(item);
+        }
+    });
+});
+
+document.getElementById('closeBillPopup').addEventListener('click', function() {
+    const billPopup = document.getElementById('billPopup');
+    billPopup.style.display = 'none';
+});
+
+document.getElementById('billForm').addEventListener('submit', function(event) {
+    event.preventDefault();
+
+    const customerName = document.getElementById('customerName').value;
+    const discount = parseFloat(document.getElementById('discount').value);
+
+    let totalAmount = 0;
+    const productRows = document.querySelectorAll('#productTable tbody tr');
+    productRows.forEach(row => {
+        const price = parseFloat(row.cells[1].textContent.replace('₹', ''));
+        const quantity = parseFloat(row.cells[2].textContent);
+        totalAmount += price * quantity;
+    });
+
+    const discountedAmount = totalAmount - (totalAmount * (discount / 100));
