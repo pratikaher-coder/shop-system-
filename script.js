@@ -283,3 +283,4 @@ calculatorButtons.forEach(button => {
             calculatorInput.value += value;
         }
     });
+});
