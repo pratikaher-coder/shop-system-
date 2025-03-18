@@ -68,6 +68,7 @@ function showSummaryPopup() {
     const popup = document.getElementById('summaryPopup');
     popup.style.display = 'flex';
 }
+
 // Function to calculate total sales
 function calculateTotalSales() {
     const productRows = document.querySelectorAll('#productTable tbody tr');
@@ -86,7 +87,6 @@ function calculateTotalSales() {
 
     return totalSales;
 }
-
 
 // Function to calculate total expenses
 function calculateTotalExpenses() {
@@ -170,6 +170,7 @@ function addExpenseToTable(description, amount) {
 
     expenseTableBody.appendChild(newRow);
 }
+
 // Function to handle selling a product
 function sellProduct(button) {
     const row = button.closest('tr');
@@ -179,8 +180,6 @@ function sellProduct(button) {
     if (quantity > 0) {
         quantity--;
         quantityCell.textContent = quantity;
-        // Update the initial quantity in the dataset
-        row.dataset.initialQuantity = quantity;
     } else {
         alert('No more stock available for this product.');
     }
@@ -191,6 +190,13 @@ function deleteProduct(button) {
     const row = button.closest('tr');
     row.remove();
 }
+
+// Function to handle deleting an expense
+function deleteExpense(button) {
+    const row = button.closest('tr');
+    row.remove();
+}
+
 // Bill Generation Functionality
 document.getElementById('generateBillBtn').addEventListener('click', function() {
     const billPopup = document.getElementById('billPopup');
@@ -256,6 +262,7 @@ document.getElementById('billForm').addEventListener('submit', function(event) {
     const billPopup = document.getElementById('billPopup');
     billPopup.style.display = 'none';
 });
+
 // Initialize the day counter display
 document.getElementById('dayCounter').textContent = `Day: ${dayCounter}`;
 
@@ -263,36 +270,3 @@ document.getElementById('dayCounter').textContent = `Day: ${dayCounter}`;
 document.getElementById('calculatorBtn').addEventListener('click', function() {
     const popup = document.getElementById('calculatorPopup');
     popup.style.display = 'flex';
-});
-
-// Close Calculator Popup when clicking outside
-document.getElementById('calculatorPopup').addEventListener('click', function(event) {
-    if (event.target === this) {
-        this.style.display = 'none';
-    }
-});
-
-// Calculator Logic
-const calculatorInput = document.getElementById('calculatorInput');
-const calculatorButtons = document.querySelectorAll('.calculator-buttons button');
-
-calculatorButtons.forEach(button => {
-    button.addEventListener('click', function() {
-        const value = this.textContent;
-
-        if (value === 'C') {
-            // Clear the input
-            calculatorInput.value = '';
-        } else if (value === '=') {
-            // Evaluate the expression
-            try {
-                calculatorInput.value = eval(calculatorInput.value);
-            } catch (error) {
-                calculatorInput.value = 'Error';
-            }
-        } else {
-            // Append the value to the input
-            calculatorInput.value += value;
-        }
-    });
-});
