@@ -1,162 +1,252 @@
-let isDayOpen = false;
-let products = [];
-let soldItems = [];
+let dayCounter = localStorage.getItem('dayCounter') ? parseInt(localStorage.getItem('dayCounter')) : 0;
+let isShopOpen = false;
+let previousStock = JSON.parse(localStorage.getItem('previousStock')) || []; // Load previous stock from localStorage
 
-// Initialize
-document.addEventListener('DOMContentLoaded', () => {
-    loadProducts();
-    checkDayStatus();
+// Function to enable/disable all buttons and inputs
+function toggleFunctionality(isEnabled) {
+    const productInputs = document.querySelectorAll('#productForm input, #productForm button');
+    const expenseInputs = document.querySelectorAll('#expenseForm input, #expenseForm button');
+    const sellButtons = document.querySelectorAll('.sell-btn');
+    const deleteButtons = document.querySelectorAll('.delete-btn');
+
+    // Enable/disable product and expense forms
+    productInputs.forEach(element => element.disabled = !isEnabled);
+    expenseInputs.forEach(element => element.disabled = !isEnabled);
+
+    // Enable/disable sell and delete buttons in tables
+    sellButtons.forEach(button => button.disabled = !isEnabled);
+    deleteButtons.forEach(button => button.disabled = !isEnabled);
+}
+
+// Open Button: Enable functionality and load previous stock
+document.getElementById('openBtn').addEventListener('click', function() {
+    if (!isShopOpen) {
+        isShopOpen = true;
+        dayCounter++;
+        localStorage.setItem('dayCounter', dayCounter); // Save dayCounter to localStorage
+        document.getElementById('dayCounter').textContent = `Day: ${dayCounter}`;
+        toggleFunctionality(true);
+
+        // Load previous stock
+        if (previousStock.length > 0) {
+            previousStock.forEach(product => {
+                addProductToTable(product.name, product.price, product.quantity);
+            });
+        }
+    }
 });
 
-// Day Controls
-function toggleDay() {
-    isDayOpen = !isDayOpen;
-    localStorage.setItem('isDayOpen', isDayOpen);
-    checkDayStatus();
-    if(!isDayOpen) resetSoldItems();
-}
+// Close Button: Disable functionality, save current stock, and show summary popup
+document.getElementById('closeBtn').addEventListener('click', function() {
+    if (isShopOpen) {
+        isShopOpen = false;
+        toggleFunctionality(false);
 
-function checkDayStatus() {
-    const status = localStorage.getItem('isDayOpen') === 'true';
-    isDayOpen = status;
-    document.getElementById('toggleDay').textContent = status ? 'Close Day' : 'Open Day';
-    document.getElementById('dayStatus').textContent = `Status: ${status ? 'Open' : 'Closed'}`;
-    document.getElementById('addBtn').disabled = !status;
-    document.getElementById('billBtn').disabled = !status;
-}
+        // Save current stock
+        const productRows = document.querySelectorAll('#productTable tbody tr');
+        previousStock = [];
+        productRows.forEach(row => {
+            const name = row.cells[0].textContent;
+            const price = row.cells[1].textContent.replace('₹', '');
+            const quantity = row.cells[2].textContent;
+            previousStock.push({ name, price, quantity });
+        });
+        localStorage.setItem('previousStock', JSON.stringify(previousStock)); // Save previousStock to localStorage
 
-// Product Management
-function addProduct() {
-    const name = document.getElementById('productName').value;
-    const price = parseFloat(document.getElementById('productPrice').value);
-    const stock = parseInt(document.getElementById('productStock').value);
+        // Clear tables
+        document.querySelector('#productTable tbody').innerHTML = '';
+        document.querySelector('#expenseTable tbody').innerHTML = '';
 
-    if(name && price && stock) {
-        const product = {
-            id: Date.now(),
-            name,
-            price,
-            stock,
-            sold: 0
-        };
-        products.push(product);
-        saveProducts();
-        renderProducts();
-        clearForm();
+        // Show the daily summary popup
+        showSummaryPopup();
     }
+});
+
+// Function to show the daily summary popup
+function showSummaryPopup() {
+    const totalSales = calculateTotalSales();
+    const totalExpenses = calculateTotalExpenses();
+    const netProfitLoss = totalSales - totalExpenses;
+
+    // Update the popup content
+    document.getElementById('totalSales').textContent = totalSales.toFixed(2);
+    document.getElementById('totalExpensesSummary').textContent = totalExpenses.toFixed(2);
+    document.getElementById('netProfitLossSummary').textContent = netProfitLoss.toFixed(2);
+
+    // Show the popup
+    const popup = document.getElementById('summaryPopup');
+    popup.style.display = 'flex';
 }
 
-function sellProduct(id) {
-    const product = products.find(p => p.id === id);
-    if(product.stock > 0) {
-        product.stock--;
-        product.sold++;
-        soldItems.push({...product, time: new Date()});
-        saveProducts();
-        renderProducts();
-    }
-}
+// Function to calculate total sales
+function calculateTotalSales() {
+    const productRows = document.querySelectorAll('#productTable tbody tr');
+    let totalSales = 0;
 
-function deleteProduct(id) {
-    products = products.filter(p => p.id !== id);
-    saveProducts();
-    renderProducts();
-}
-
-// Bill Generation
-function showBill() {
-    const modal = document.getElementById('billModal');
-    const billItems = document.getElementById('billItems');
-    let total = 0;
-    
-    billItems.innerHTML = products.filter(p => p.sold > 0)
-        .map(p => {
-            total += p.price * p.sold;
-            return `<div>${p.name} x${p.sold} = $${(p.price * p.sold).toFixed(2)}</div>`;
-        }).join('');
-    
-    document.getElementById('totalAmount').textContent = `Total: $${total.toFixed(2)}`;
-    modal.style.display = 'block';
-}
-
-// Calculator
-function showCalculator() {
-    document.getElementById('calcModal').style.display = 'block';
-    const display = document.getElementById('calcDisplay');
-    let currentValue = '';
-
-    document.querySelectorAll('.calc-buttons button').forEach(btn => {
-        btn.onclick = () => {
-            if(btn.textContent === '=') {
-                try {
-                    currentValue = eval(currentValue).toString();
-                } catch {
-                    currentValue = 'Error';
-                }
-            } else if(btn.textContent === 'C') {
-                currentValue = '';
-            } else {
-                currentValue += btn.textContent;
-            }
-            display.value = currentValue;
-        };
+    productRows.forEach(row => {
+        const price = parseFloat(row.cells[1].textContent.replace('₹', ''));
+        const initialQuantity = parseInt(row.dataset.initialQuantity);
+        const currentQuantity = parseInt(row.cells[2].textContent);
+        const soldQuantity = initialQuantity - currentQuantity;
+        totalSales += price * soldQuantity;
     });
+
+    return totalSales;
 }
 
-// Helpers
-function closeModal() {
-    document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
+// Function to calculate total expenses
+function calculateTotalExpenses() {
+    const expenseRows = document.querySelectorAll('#expenseTable tbody tr');
+    let totalExpenses = 0;
+
+    expenseRows.forEach(row => {
+        const amount = parseFloat(row.cells[1].textContent.replace('₹', ''));
+        totalExpenses += amount;
+    });
+
+    return totalExpenses;
 }
 
-function saveProducts() {
-    localStorage.setItem('products', JSON.stringify(products));
-}
+// Close the popup when the "Close" button is clicked
+document.getElementById('closePopup').addEventListener('click', function() {
+    const popup = document.getElementById('summaryPopup');
+    popup.style.display = 'none';
+});
 
-function loadProducts() {
-    products = JSON.parse(localStorage.getItem('products') || []);
-    renderProducts();
-}
+// Handle Product Form Submission
+document.getElementById('productForm').addEventListener('submit', function(event) {
+    event.preventDefault();
 
-function renderProducts() {
-    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-    const filtered = products.filter(p => 
-        p.name.toLowerCase().includes(searchTerm)
-    );
-    
-    const html = filtered.map(p => `
-        <div class="product-item">
-            <div>
-                <h3>${p.name}</h3>
-                <p>Price: $${p.price.toFixed(2)}</p>
-                <p>Stock: ${p.stock}</p>
-            </div>
-            <div>
-                <button onclick="sellProduct(${p.id})">Sell</button>
-                <button onclick="deleteProduct(${p.id})">Delete</button>
-            </div>
-        </div>
-    `).join('');
-    document.getElementById('productList').innerHTML = html;
-}
+    const productName = document.getElementById('productName').value;
+    const productPrice = document.getElementById('productPrice').value;
+    const productQuantity = document.getElementById('productQuantity').value;
 
-function clearForm() {
-    document.getElementById('productName').value = '';
-    document.getElementById('productPrice').value = '';
-    document.getElementById('productStock').value = '';
-}
-
-function resetSoldItems() {
-    products.forEach(p => p.sold = 0);
-    saveProducts();
-}
-
-// Search
-document.getElementById('searchInput').addEventListener('input', renderProducts);
-document.getElementById('toggleDay').addEventListener('click', toggleDay);
-
-// Close modal when clicking outside
-window.onclick = function(event) {
-    if(event.target.classList.contains('modal')) {
-        closeModal();
+    if (productName && productPrice && productQuantity) {
+        addProductToTable(productName, productPrice, productQuantity);
+        document.getElementById('productForm').reset();
+    } else {
+        alert('Please fill in all fields for the product.');
     }
+});
+
+// Handle Expense Form Submission
+document.getElementById('expenseForm').addEventListener('submit', function(event) {
+    event.preventDefault();
+
+    const expenseName = document.getElementById('expenseName').value;
+    const expensePrice = document.getElementById('expensePrice').value;
+
+    if (expenseName && expensePrice) {
+        addExpenseToTable(expenseName, expensePrice);
+        document.getElementById('expenseForm').reset();
+    } else {
+        alert('Please fill in all fields for the expense.');
+    }
+});
+
+// Function to Add Product to Table
+function addProductToTable(name, price, quantity) {
+    const table = document.getElementById('productTable').getElementsByTagName('tbody')[0];
+    const newRow = table.insertRow();
+
+    const cell1 = newRow.insertCell(0);
+    const cell2 = newRow.insertCell(1);
+    const cell3 = newRow.insertCell(2);
+    const cell4 = newRow.insertCell(3);
+
+    cell1.textContent = name;
+    cell2.textContent = `₹${price}`;
+    cell3.textContent = quantity;
+
+    // Store the initial quantity in a data attribute
+    newRow.dataset.initialQuantity = quantity;
+
+    // Sell Button
+    const sellButton = document.createElement('button');
+    sellButton.textContent = 'Sell';
+    sellButton.classList.add('sell-btn');
+    sellButton.addEventListener('click', function() {
+        const currentQuantity = parseInt(cell3.textContent);
+        if (currentQuantity > 0) {
+            cell3.textContent = currentQuantity - 1; // Reduce quantity by 1
+            if (cell3.textContent == 0) {
+                table.deleteRow(newRow.rowIndex - 1); // Remove row if quantity is 0
+            }
+        }
+    });
+
+    // Delete Button
+    const deleteButton = document.createElement('button');
+    deleteButton.textContent = 'Delete';
+    deleteButton.classList.add('delete-btn');
+    deleteButton.addEventListener('click', function() {
+        table.deleteRow(newRow.rowIndex - 1);
+    });
+
+    cell4.appendChild(sellButton);
+    cell4.appendChild(deleteButton);
 }
+
+// Function to Add Expense to Table
+function addExpenseToTable(name, price) {
+    const table = document.getElementById('expenseTable').getElementsByTagName('tbody')[0];
+    const newRow = table.insertRow();
+
+    const cell1 = newRow.insertCell(0);
+    const cell2 = newRow.insertCell(1);
+    const cell3 = newRow.insertCell(2);
+
+    cell1.textContent = name;
+    cell2.textContent = `₹${price}`;
+
+    // Delete Button
+    const deleteButton = document.createElement('button');
+    deleteButton.textContent = 'Delete';
+    deleteButton.classList.add('delete-btn');
+    deleteButton.addEventListener('click', function() {
+        table.deleteRow(newRow.rowIndex - 1);
+    });
+
+    cell3.appendChild(deleteButton);
+}
+
+// Initialize the day counter display
+document.getElementById('dayCounter').textContent = `Day: ${dayCounter}`;
+
+// Calculator Button: Show Calculator Popup
+document.getElementById('calculatorBtn').addEventListener('click', function() {
+    const popup = document.getElementById('calculatorPopup');
+    popup.style.display = 'flex';
+});
+
+// Close Calculator Popup when clicking outside
+document.getElementById('calculatorPopup').addEventListener('click', function(event) {
+    if (event.target === this) {
+        this.style.display = 'none';
+    }
+});
+
+// Calculator Logic
+const calculatorInput = document.getElementById('calculatorInput');
+const calculatorButtons = document.querySelectorAll('.calculator-buttons button');
+
+calculatorButtons.forEach(button => {
+    button.addEventListener('click', function() {
+        const value = this.textContent;
+
+        if (value === 'C') {
+            // Clear the input
+            calculatorInput.value = '';
+        } else if (value === '=') {
+            // Evaluate the expression
+            try {
+                calculatorInput.value = eval(calculatorInput.value);
+            } catch (error) {
+                calculatorInput.value = 'Error';
+            }
+        } else {
+            // Append the value to the input
+            calculatorInput.value += value;
+        }
+    });
+});
