@@ -262,6 +262,7 @@ document.getElementById('billForm').addEventListener('submit', function(event) {
     const billPopup = document.getElementById('billPopup');
     billPopup.style.display = 'none';
 });
+
 // Initialize the day counter display
 document.getElementById('dayCounter').textContent = `Day: ${dayCounter}`;
 
