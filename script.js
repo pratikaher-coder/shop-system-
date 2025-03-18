@@ -262,3 +262,43 @@ document.getElementById('billForm').addEventListener('submit', function(event) {
     const billPopup = document.getElementById('billPopup');
     billPopup.style.display = 'none';
 });
+// Initialize the day counter display
+document.getElementById('dayCounter').textContent = `Day: ${dayCounter}`;
+
+// Calculator Button: Show Calculator Popup
+document.getElementById('calculatorBtn').addEventListener('click', function() {
+    const popup = document.getElementById('calculatorPopup');
+    popup.style.display = 'flex';
+});
+
+// Close Calculator Popup when clicking outside
+document.getElementById('calculatorPopup').addEventListener('click', function(event) {
+    if (event.target === this) {
+        this.style.display = 'none';
+    }
+});
+
+// Calculator Logic
+const calculatorInput = document.getElementById('calculatorInput');
+const calculatorButtons = document.querySelectorAll('.calculator-buttons button');
+
+calculatorButtons.forEach(button => {
+    button.addEventListener('click', function() {
+        const value = this.textContent;
+
+        if (value === 'C') {
+            // Clear the input
+            calculatorInput.value = '';
+        } else if (value === '=') {
+            // Evaluate the expression
+            try {
+                calculatorInput.value = eval(calculatorInput.value);
+            } catch (error) {
+                calculatorInput.value = 'Error';
+            }
+        } else {
+            // Append the value to the input
+            calculatorInput.value += value;
+        }
+    });
+});
