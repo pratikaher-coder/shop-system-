@@ -44,7 +44,7 @@ document.getElementById('closeBtn').addEventListener('click', function() {
             const name = row.cells[0].textContent;
             const price = row.cells[1].textContent.replace('₹', '');
             const quantity = row.cells[2].textContent;
-            previousStock.push({ name, price, quantity });
+            previousStock.push({ name, price: parseFloat(price), quantity: parseInt(quantity) });
         });
         localStorage.setItem('previousStock', JSON.stringify(previousStock));
 
@@ -254,46 +254,6 @@ document.getElementById('billForm').addEventListener('submit', function(event) {
             totalAmount += price * soldQuantity;
         }
     });
-    // Initialize the day counter display
-document.getElementById('dayCounter').textContent = `Day: ${dayCounter}`;
-
-// Calculator Button: Show Calculator Popup
-document.getElementById('calculatorBtn').addEventListener('click', function() {
-    const popup = document.getElementById('calculatorPopup');
-    popup.style.display = 'flex';
-});
-
-// Close Calculator Popup when clicking outside
-document.getElementById('calculatorPopup').addEventListener('click', function(event) {
-    if (event.target === this) {
-        this.style.display = 'none';
-    }
-});
-
-// Calculator Logic
-const calculatorInput = document.getElementById('calculatorInput');
-const calculatorButtons = document.querySelectorAll('.calculator-buttons button');
-
-calculatorButtons.forEach(button => {
-    button.addEventListener('click', function() {
-        const value = this.textContent;
-
-        if (value === 'C') {
-            // Clear the input
-            calculatorInput.value = '';
-        } else if (value === '=') {
-            // Evaluate the expression
-            try {
-                calculatorInput.value = eval(calculatorInput.value);
-            } catch (error) {
-                calculatorInput.value = 'Error';
-            }
-        } else {
-            // Append the value to the input
-            calculatorInput.value += value;
-        }
-    });
-});
 
     const discountedAmount = totalAmount - (totalAmount * (discount / 100));
 
