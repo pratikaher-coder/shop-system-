@@ -1,6 +1,6 @@
 let dayCounter = localStorage.getItem('dayCounter') ? parseInt(localStorage.getItem('dayCounter')) : 0;
 let isShopOpen = false;
-let previousStock = JSON.parse(localStorage.getItem('previousStock')) || []; // Load previous stock from localStorage
+let previousStock = JSON.parse(localStorage.getItem('previousStock')) || [];
 
 // Function to enable/disable all buttons and inputs
 function toggleFunctionality(isEnabled) {
@@ -9,11 +9,8 @@ function toggleFunctionality(isEnabled) {
     const sellButtons = document.querySelectorAll('.sell-btn');
     const deleteButtons = document.querySelectorAll('.delete-btn');
 
-    // Enable/disable product and expense forms
     productInputs.forEach(element => element.disabled = !isEnabled);
     expenseInputs.forEach(element => element.disabled = !isEnabled);
-
-    // Enable/disable sell and delete buttons in tables
     sellButtons.forEach(button => button.disabled = !isEnabled);
     deleteButtons.forEach(button => button.disabled = !isEnabled);
 }
@@ -23,11 +20,10 @@ document.getElementById('openBtn').addEventListener('click', function() {
     if (!isShopOpen) {
         isShopOpen = true;
         dayCounter++;
-        localStorage.setItem('dayCounter', dayCounter); // Save dayCounter to localStorage
+        localStorage.setItem('dayCounter', dayCounter);
         document.getElementById('dayCounter').textContent = `Day: ${dayCounter}`;
         toggleFunctionality(true);
 
-        // Load previous stock
         if (previousStock.length > 0) {
             previousStock.forEach(product => {
                 addProductToTable(product.name, product.price, product.quantity);
@@ -42,7 +38,6 @@ document.getElementById('closeBtn').addEventListener('click', function() {
         isShopOpen = false;
         toggleFunctionality(false);
 
-        // Save current stock
         const productRows = document.querySelectorAll('#productTable tbody tr');
         previousStock = [];
         productRows.forEach(row => {
@@ -51,13 +46,11 @@ document.getElementById('closeBtn').addEventListener('click', function() {
             const quantity = row.cells[2].textContent;
             previousStock.push({ name, price, quantity });
         });
-        localStorage.setItem('previousStock', JSON.stringify(previousStock)); // Save previousStock to localStorage
+        localStorage.setItem('previousStock', JSON.stringify(previousStock));
 
-        // Clear tables
         document.querySelector('#productTable tbody').innerHTML = '';
         document.querySelector('#expenseTable tbody').innerHTML = '';
 
-        // Show the daily summary popup
         showSummaryPopup();
     }
 });
@@ -68,12 +61,10 @@ function showSummaryPopup() {
     const totalExpenses = calculateTotalExpenses();
     const netProfitLoss = totalSales - totalExpenses;
 
-    // Update the popup content
     document.getElementById('totalSales').textContent = totalSales.toFixed(2);
     document.getElementById('totalExpensesSummary').textContent = totalExpenses.toFixed(2);
     document.getElementById('netProfitLossSummary').textContent = netProfitLoss.toFixed(2);
 
-    // Show the popup
     const popup = document.getElementById('summaryPopup');
     popup.style.display = 'flex';
 }
@@ -88,7 +79,10 @@ function calculateTotalSales() {
         const initialQuantity = parseInt(row.dataset.initialQuantity);
         const currentQuantity = parseInt(row.cells[2].textContent);
         const soldQuantity = initialQuantity - currentQuantity;
-        totalSales += price * soldQuantity;
+
+        if (soldQuantity > 0) {
+            totalSales += price * soldQuantity;
+        }
     });
 
     return totalSales;
@@ -157,9 +151,7 @@ function addProductToTable(name, price, quantity) {
         <td><button class="delete-btn" onclick="deleteProduct(this)">Delete</button></td>
     `;
 
-    // Store the initial quantity in a data attribute
     newRow.dataset.initialQuantity = quantity;
-
     productTableBody.appendChild(newRow);
 }
 
@@ -203,57 +195,38 @@ function deleteExpense(button) {
     row.remove();
 }
 
-// Calculator Functionality
-document.getElementById('calculatorBtn').addEventListener('click', function() {
-    const calculatorPopup = document.getElementById('calculatorPopup');
-    calculatorPopup.style.display = 'flex';
-});
-
-document.querySelectorAll('.calculator-buttons button').forEach(button => {
-    button.addEventListener('click', function() {
-        const input = document.getElementById('calculatorInput');
-        if (button.textContent === 'C') {
-            input.value = '';
-        } else if (button.textContent === '=') {
-            try {
-                input.value = eval(input.value);
-            } catch {
-                input.value = 'Error';
-            }
-        } else {
-            input.value += button.textContent;
-        }
-    });
-});
-
-document.getElementById('cancelBtn').addEventListener('click', function() {
-    const calculatorPopup = document.getElementById('calculatorPopup');
-    calculatorPopup.style.display = 'none';
-});
-
 // Bill Generation Functionality
 document.getElementById('generateBillBtn').addEventListener('click', function() {
     const billPopup = document.getElementById('billPopup');
     billPopup.style.display = 'flex';
 
-    // Populate bill items
     const productRows = document.querySelectorAll('#productTable tbody tr');
     const billItems = document.getElementById('billItems');
     billItems.innerHTML = '';
 
+    let totalAmount = 0;
+
     productRows.forEach(row => {
         const name = row.cells[0].textContent;
-        const price = row.cells[1].textContent.replace('₹', '');
-        const quantity = row.cells[2].textContent;
+        const price = parseFloat(row.cells[1].textContent.replace('₹', ''));
+        const initialQuantity = parseInt(row.dataset.initialQuantity);
+        const currentQuantity = parseInt(row.cells[2].textContent);
+        const soldQuantity = initialQuantity - currentQuantity;
 
-        if (quantity > 0) {
+        if (soldQuantity > 0) {
             const item = document.createElement('div');
             item.innerHTML = `
-                <p>${name} - ₹${price} x ${quantity}</p>
+                <p>${name} - ₹${price} x ${soldQuantity}</p>
             `;
             billItems.appendChild(item);
+
+            totalAmount += price * soldQuantity;
         }
     });
+
+    const totalAmountElement = document.createElement('p');
+    totalAmountElement.innerHTML = `<strong>Total Amount: ₹${totalAmount.toFixed(2)}</strong>`;
+    billItems.appendChild(totalAmountElement);
 });
 
 document.getElementById('closeBillPopup').addEventListener('click', function() {
@@ -271,8 +244,13 @@ document.getElementById('billForm').addEventListener('submit', function(event) {
     const productRows = document.querySelectorAll('#productTable tbody tr');
     productRows.forEach(row => {
         const price = parseFloat(row.cells[1].textContent.replace('₹', ''));
-        const quantity = parseFloat(row.cells[2].textContent);
-        totalAmount += price * quantity;
+        const initialQuantity = parseInt(row.dataset.initialQuantity);
+        const currentQuantity = parseInt(row.cells[2].textContent);
+        const soldQuantity = initialQuantity - currentQuantity;
+
+        if (soldQuantity > 0) {
+            totalAmount += price * soldQuantity;
+        }
     });
 
     const discountedAmount = totalAmount - (totalAmount * (discount / 100));
