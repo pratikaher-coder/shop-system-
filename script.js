@@ -170,8 +170,6 @@ function addExpenseToTable(description, amount) {
 
     expenseTableBody.appendChild(newRow);
 }
-
-// Function to handle selling a product
 // Function to handle selling a product
 function sellProduct(button) {
     const row = button.closest('tr');
@@ -181,6 +179,8 @@ function sellProduct(button) {
     if (quantity > 0) {
         quantity--;
         quantityCell.textContent = quantity;
+        // Update the initial quantity in the dataset
+        row.dataset.initialQuantity = quantity;
     } else {
         alert('No more stock available for this product.');
     }
