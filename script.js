@@ -276,3 +276,9 @@ document.getElementById('billForm').addEventListener('submit', function(event) {
     });
 
     const discountedAmount = totalAmount - (totalAmount * (discount / 100));
+
+    alert(`Bill for ${customerName}\nTotal Amount: ₹${totalAmount.toFixed(2)}\nDiscount: ${discount}%\nFinal Amount: ₹${discountedAmount.toFixed(2)}`);
+
+    const billPopup = document.getElementById('billPopup');
+    billPopup.style.display = 'none';
+});
