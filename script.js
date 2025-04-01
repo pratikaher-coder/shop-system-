@@ -226,20 +226,30 @@ document.getElementById('billForm').addEventListener('submit', function(e) {
     
     const customerName = document.getElementById('customerName').value;
     const discount = parseFloat(document.getElementById('discount').value) || 0;
-    let totalAmount = products.reduce((sum, p) => sum + (p.price * p.sold), 0);
-    let discountedAmount = totalAmount * (1 - discount/100);
     
+    // 1. Capture sold items for THIS bill only
+    const billProducts = products.filter(p => p.sold > 0);
+    let totalAmount = billProducts.reduce((sum, p) => sum + (p.price * p.sold), 0);
+    
+    // 2. Generate receipt
     alert(`BILL RECEIPT\n
 Customer: ${customerName}\n
-${products.filter(p => p.sold > 0).map(p => 
+${billProducts.map(p => 
     `${p.name} - ${p.sold} × ₹${p.price.toFixed(2)} = ₹${(p.sold * p.price).toFixed(2)}`
 ).join('\n')}\n
 Subtotal: ₹${totalAmount.toFixed(2)}\n
 Discount: ${discount}%\n
-Total: ₹${discountedAmount.toFixed(2)}`);
+Total: ₹${(totalAmount * (1 - discount/100)).toFixed(2)}`);
+
+    // 3. Reset sold quantities AFTER bill generation
+    products.forEach(p => p.sold = 0);
+    localStorage.setItem('products', JSON.stringify(products));
     
+    // 4. Close popup and reset form
     document.getElementById('billPopup').style.display = 'none';
     this.reset();
+    renderProducts(); // Refresh the table
+
 });
 
 document.getElementById('closeBillPopup').addEventListener('click', function() {
