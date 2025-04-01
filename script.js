@@ -54,6 +54,11 @@ document.getElementById('closeBtn').addEventListener('click', function() {
     if (isShopOpen) {
         isShopOpen = false;
         toggleFunctionality(false);
+        
+        // Reset daily counters
+        products.forEach(p => p.soldToday = 0);
+        localStorage.setItem('products', JSON.stringify(products));
+        
         showSummaryPopup();
     }
 });
@@ -65,8 +70,9 @@ document.getElementById('productForm').addEventListener('submit', function(e) {
     const price = parseFloat(document.getElementById('productPrice').value);
     const quantity = parseInt(document.getElementById('productQuantity').value);
 
-    if (name && price > 0 && quantity > 0) {
-        products.push({ name, price, quantity, sold: 0 });
+    if (name && price > 0 && quantity > 0) 
+    {     
+        products.push({ name, price, quantity, sold: 0, soldToday: 0 }); 
         localStorage.setItem('products', JSON.stringify(products));
         renderProducts();
         this.reset();
@@ -150,7 +156,8 @@ function renderExpenses() {
 function sellProduct(index) {
     if (products[index].quantity > 0) {
         products[index].quantity--;
-        products[index].sold++;
+        products[index].sold++;         // For bills
+        products[index].soldToday++;    // For daily summary
         localStorage.setItem('products', JSON.stringify(products));
         renderProducts();
     } else {
@@ -172,53 +179,52 @@ function deleteExpense(index) {
 
 // Summary Calculations
 function showSummaryPopup() {
-    const totalSales = products.reduce((sum, product) => sum + (product.sold * product.price), 0);
-    const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
-    const netProfit = totalSales - totalExpenses;
-
+    // Use soldToday instead of sold
+    const totalSales = products.reduce((sum, p) => sum + (p.soldToday * p.price), 0);
+    const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
+    
     document.getElementById('totalSales').textContent = totalSales.toFixed(2);
     document.getElementById('totalExpensesSummary').textContent = totalExpenses.toFixed(2);
-    document.getElementById('netProfitLossSummary').textContent = netProfit.toFixed(2);
-
-    document.getElementById('summaryPopup').style.display = 'flex';
+    document.getElementById('netProfitLossSummary').textContent = (totalSales - totalExpenses).toFixed(2);
 }
 // Bill Generation Functionality
+// ===== BILL GENERATION (UPDATED) ===== //
 document.getElementById('generateBillBtn').addEventListener('click', function() {
     if (!isShopOpen) {
         alert('Please open the shop first!');
         return;
     }
     
-    const billPopup = document.getElementById('billPopup');
     const billItems = document.getElementById('billItems');
-    
     billItems.innerHTML = '';
-    let totalAmount = 0;
     
-    products.forEach(product => {
-        if (product.sold > 0) {
-            const itemAmount = product.price * product.sold;
-            totalAmount += itemAmount;
+    // Show only products with current sales (sold > 0)
+    const currentBillItems = products.filter(p => p.sold > 0);
+    
+    if (currentBillItems.length === 0) {
+        billItems.innerHTML = '<p>No items sold in this session!</p>';
+    } else {
+        let subtotal = 0;
+        
+        currentBillItems.forEach(product => {
+            const itemTotal = product.price * product.sold;
+            subtotal += itemTotal;
             
             const itemDiv = document.createElement('div');
             itemDiv.className = 'bill-item';
             itemDiv.innerHTML = `
-                <p>${product.name} - ₹${product.price.toFixed(2)} × ${product.sold} = ₹${itemAmount.toFixed(2)}</p>
+                <p>${product.name} - ₹${product.price.toFixed(2)} × ${product.sold} = ₹${itemTotal.toFixed(2)}</p>
             `;
             billItems.appendChild(itemDiv);
-        }
-    });
-    
-    if (totalAmount === 0) {
-        billItems.innerHTML = '<p>No items sold yet!</p>';
-    } else {
+        });
+        
         const totalDiv = document.createElement('div');
         totalDiv.className = 'bill-total';
-        totalDiv.innerHTML = `<h3>Subtotal: ₹${totalAmount.toFixed(2)}</h3>`;
+        totalDiv.innerHTML = `<h3>Subtotal: ₹${subtotal.toFixed(2)}</h3>`;
         billItems.appendChild(totalDiv);
     }
     
-    billPopup.style.display = 'flex';
+    document.getElementById('billPopup').style.display = 'flex';
 });
 
 document.getElementById('billForm').addEventListener('submit', function(e) {
@@ -227,29 +233,29 @@ document.getElementById('billForm').addEventListener('submit', function(e) {
     const customerName = document.getElementById('customerName').value;
     const discount = parseFloat(document.getElementById('discount').value) || 0;
     
-    // 1. Capture sold items for THIS bill only
-    const billProducts = products.filter(p => p.sold > 0);
-    let totalAmount = billProducts.reduce((sum, p) => sum + (p.price * p.sold), 0);
+    // 1. Capture items sold ONLY in this billing session
+    const currentBillItems = products.filter(p => p.sold > 0);
+    const subtotal = currentBillItems.reduce((sum, p) => sum + (p.price * p.sold), 0);
+    const total = subtotal * (1 - discount/100);
     
     // 2. Generate receipt
     alert(`BILL RECEIPT\n
 Customer: ${customerName}\n
-${billProducts.map(p => 
+${currentBillItems.map(p => 
     `${p.name} - ${p.sold} × ₹${p.price.toFixed(2)} = ₹${(p.sold * p.price).toFixed(2)}`
 ).join('\n')}\n
-Subtotal: ₹${totalAmount.toFixed(2)}\n
+Subtotal: ₹${subtotal.toFixed(2)}\n
 Discount: ${discount}%\n
-Total: ₹${(totalAmount * (1 - discount/100)).toFixed(2)}`);
-
-    // 3. Reset sold quantities AFTER bill generation
+Total: ₹${total.toFixed(2)}`);
+    
+    // 3. Reset SOLD quantities (but keep soldToday for daily summary)
     products.forEach(p => p.sold = 0);
     localStorage.setItem('products', JSON.stringify(products));
     
-    // 4. Close popup and reset form
+    // 4. Close popup and refresh UI
     document.getElementById('billPopup').style.display = 'none';
     this.reset();
-    renderProducts(); // Refresh the table
-
+    renderProducts(); // Update the table display
 });
 
 document.getElementById('closeBillPopup').addEventListener('click', function() {
