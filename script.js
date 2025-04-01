@@ -226,15 +226,8 @@ document.getElementById('billForm').addEventListener('submit', function(e) {
     
     const customerName = document.getElementById('customerName').value;
     const discount = parseFloat(document.getElementById('discount').value) || 0;
-    let billItems = [];
-    let totalAmount = 0;
-
-    // Calculate totals and reset sold quantities
-    products.forEach(product => {
-        if (product.sold > 0) {
-            const itemTotal = product.price * product.sold;
-            billItems.push({
-                name: product.name
+    let totalAmount = products.reduce((sum, p) => sum + (p.price * p.sold), 0);
+    let discountedAmount = totalAmount * (1 - discount/100);
     
     alert(`BILL RECEIPT\n
 Customer: ${customerName}\n
